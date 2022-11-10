@@ -13,6 +13,8 @@ urlpatterns = [
          problemset.get_oj_problem),
     path('get-oj-problems',
          problemset.get_oj_problems),
+    path('get-oj-submissions',
+         problemset.get_oj_submissions),
     path('submit-oj-problem', problemset.submit_oj_problem),
 
     path('get-crawl-request/<int:crawl_request_id>',

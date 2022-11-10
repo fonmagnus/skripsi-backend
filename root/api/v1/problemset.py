@@ -103,6 +103,20 @@ def get_oj_problems(request):
         status=200
     )
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_oj_submissions(request):
+    oj_problems, metadata = problemset_service.get_all_oj_submissions(request.GET)
+    serializer = OJSubmissionSerializer(oj_problems, many=True)
+    return JsonResponse(
+        data={
+            'data': serializer.data,
+            'metadata': metadata
+        },
+        safe=False,
+        status=200
+    )
+
 
 @api_view(["GET"])
 @permission_classes([AllowAny])

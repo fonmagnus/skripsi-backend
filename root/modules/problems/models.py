@@ -50,6 +50,10 @@ class ProblemTag(models.Model):
 
 
 class OJProblem(models.Model):
+    class ProblemType(models.TextChoices):
+        batch = 'batch'
+        interactive = 'interactive'
+        output_only = 'output_only'
     oj_name = models.CharField(max_length=255, db_index=True)
     oj_problem_code = models.CharField(
         max_length=255, default=None, db_index=True)
@@ -61,6 +65,8 @@ class OJProblem(models.Model):
     difficulty = models.FloatField(
         default=0, null=True, blank=True, db_index=True)
     tags = models.ManyToManyField(ProblemTag, blank=True, db_index=True)
+    type = models.CharField(
+        max_length=255, choices=ProblemType.choices, default=ProblemType.batch)
 
     def __str__(self):
         return self.oj_problem_code + " " + self.title + " " + self.oj_name

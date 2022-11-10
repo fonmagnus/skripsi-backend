@@ -28,6 +28,12 @@ class UserOnlyNameSerializer(UserSerializer):
         fields = ('name', )
 
 
+class UserOnlyNameAndUsernameSerializer(UserSerializer):
+    class Meta(UserSerializer.Meta):
+        model = User
+        fields = ('name', 'username')
+
+
 class UserOnlyNameAndEmailSerializer(UserSerializer):
     class Meta(UserSerializer.Meta):
         model = User

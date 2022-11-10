@@ -10,7 +10,7 @@ from .models import (
     TeamForProblemset,
     ProblemTag
 )
-from root.modules.accounts.serializers import UserSerializer, UserOnlyNameSerializer
+from root.modules.accounts.serializers import UserSerializer, UserOnlyNameAndUsernameSerializer
 
 
 class ProblemsetSerializer(serializers.ModelSerializer):
@@ -40,12 +40,19 @@ class OJProblemSerializer(serializers.ModelSerializer):
 
 
 class OJSubmissionSerializer(serializers.ModelSerializer):
-    user = UserOnlyNameSerializer(many=False, read_only=True)
+    user = UserOnlyNameAndUsernameSerializer(many=False, read_only=True)
+    oj_problem_title = serializers.SerializerMethodField(
+        'get_oj_problem_title')
+
+    def get_oj_problem_title(self, oj_submission):
+        oj_problem = OJProblem.objects.get(
+            oj_name=oj_submission.oj_name, oj_problem_code=oj_submission.oj_problem_code)
+        return oj_problem.title
 
     class Meta:
         model = OJSubmission
         fields = ['verdict', 'status', 'submitted_at',
-                  'id', 'oj_name', 'oj_problem_code', 'user', 'submission_id', 'score']
+                  'id', 'oj_name', 'oj_problem_code', 'user', 'submission_id', 'score', 'oj_problem_title']
 
 
 class OJSubmissionDetailSerializer(serializers.ModelSerializer):

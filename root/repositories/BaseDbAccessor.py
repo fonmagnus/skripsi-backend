@@ -1,3 +1,6 @@
+import math
+
+
 class BaseDbAccessor:
     def __init__(self) -> None:
         self.limit = 10
@@ -12,5 +15,10 @@ class BaseDbAccessor:
             limit = queryset.count() - offset
 
         queryset = queryset.order_by(order_by)
-        queryset = queryset[offset:offset+limit]
-        return queryset
+        return {
+            'result': queryset[offset:offset+limit],
+            'meta': {
+                'total_items': queryset.count(),
+                'total_page': math.ceil(queryset.count() / limit)
+            }
+        }

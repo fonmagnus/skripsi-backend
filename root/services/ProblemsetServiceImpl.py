@@ -35,6 +35,13 @@ class ProblemsetServiceImpl:
             result.get('meta')
         )
 
+    def get_all_oj_submissions(self, request):
+        result = self.db_accessor.get_all_oj_submissions(request)
+        return (
+            result.get('result'),
+            result.get('meta')
+        )
+
     def toggle(self, slug):
         return self.db_accessor.toggle(slug)
 

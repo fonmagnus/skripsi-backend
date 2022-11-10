@@ -28,20 +28,25 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
             difficulty__gte=difficulty_from, difficulty__lte=difficulty_to
         )
 
-        print(oj_names)
-
         if len(oj_names) > 0:
             oj_problems = oj_problems.filter(
                 oj_name__in=oj_names
             )
 
-        return {
-            'result': super().do_query(oj_problems, request),
-            'meta': {
-                'total_items': oj_problems.count(),
-                'total_page': math.ceil(oj_problems.count() / self.limit)
-            }
-        }
+        return super().do_query(oj_problems, request)
+
+    def get_all_oj_submissions(self, request):
+        oj_submissions = OJSubmission.objects.all()
+
+        if request.get('oj_name') is not None:
+            oj_submissions = oj_submissions.filter(
+                oj_name=request.get('oj_name'))
+
+        if request.get('oj_problem_code') is not None:
+            oj_submissions = oj_submissions.filter(
+                oj_problem_code=request.get('oj_problem_code'))
+
+        return super().do_query(oj_submissions, request)
 
     def get_my_published_problemset(self, me):
         return Problemset.objects.filter(
