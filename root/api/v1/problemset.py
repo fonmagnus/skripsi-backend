@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from django.http import JsonResponse
 
 from root.modules.problems.serializers import (
+    BodylessOJProblemSerializer,
     BodylessOJProblemForContestSerializer,
     OJSubmissionSerializer,
     OJSubmissionDetailSerializer,
@@ -83,6 +84,21 @@ def get_contest_problems(request, slug):
         oj_problems_for_contest, many=True)
     return JsonResponse(
         data=serializer.data,
+        safe=False,
+        status=200
+    )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_oj_problems(request):
+    oj_problems, metadata = problemset_service.get_all_oj_problems(request.GET)
+    serializer = BodylessOJProblemSerializer(oj_problems, many=True)
+    return JsonResponse(
+        data={
+            'problems': serializer.data,
+            'meta': metadata
+        },
         safe=False,
         status=200
     )

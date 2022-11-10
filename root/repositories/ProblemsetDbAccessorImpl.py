@@ -6,14 +6,25 @@ from datetime import datetime
 import re
 import unidecode
 from datetime import datetime
+from .BaseDbAccessor import BaseDbAccessor
 
 
-class ProblemsetDbAccessorImpl:
+class ProblemsetDbAccessorImpl(BaseDbAccessor):
 
     def get_all_published_problemset(self):
         return Problemset.objects.filter(
             Q(is_published=True)
         ).order_by('-priority_index', '-start_at')
+
+    def get_all_oj_problems(self, request):
+        oj_problems = OJProblem.objects.all()
+
+        return {
+            'result': super().do_query(oj_problems, request),
+            'meta': {
+                'total_items': oj_problems.count()
+            }
+        }
 
     def get_my_published_problemset(self, me):
         return Problemset.objects.filter(
@@ -35,6 +46,8 @@ class ProblemsetDbAccessorImpl:
         start_date = problemset_dict.get('start_date')
         start_time = problemset_dict.get('start_time')
         start_at = datetime.fromisoformat(start_date + " " + start_time)
+        enable_partial_scoring = problemset_dict.get(
+            'enable_partial_scoring', False)
 
         problemset = Problemset.objects.create(
             title=problemset_dict.get('title'),
@@ -50,6 +63,7 @@ class ProblemsetDbAccessorImpl:
             is_leaderboard_enabled=True,
             is_public_leaderboard_enabled=False,
             created_by=user,
+            enable_partial_scoring=enable_partial_scoring,
         )
 
         self.add_oj_problems_to_problemset(

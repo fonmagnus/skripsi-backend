@@ -77,6 +77,7 @@ class OJSubmission(models.Model):
         OJLoginAccountInfo, on_delete=models.CASCADE, null=True, blank=True)
     problemset = models.ForeignKey(
         Problemset, on_delete=models.CASCADE, blank=True, null=True, default=None)
+    enable_partial_scoring = models.BooleanField(default=False)
 
 
 class OJProblemForContest(models.Model):

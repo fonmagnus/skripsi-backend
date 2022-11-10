@@ -28,6 +28,13 @@ class ProblemsetServiceImpl:
     def get_problemset_by_slug(self, slug):
         return self.db_accessor.get_problemset_by_slug(slug)
 
+    def get_all_oj_problems(self, request):
+        result = self.db_accessor.get_all_oj_problems(request)
+        return (
+            result.get('result'),
+            result.get('meta')
+        )
+
     def toggle(self, slug):
         return self.db_accessor.toggle(slug)
 
