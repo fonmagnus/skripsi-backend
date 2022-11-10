@@ -1,9 +1,10 @@
 from django.db.models import Q
-from root.modules.problems.models import OJProblem, OJProblemForContest, OJSubmission, Problemset, ProblemsetEligibility, Team, TeamForProblemset
+from root.modules.problems.models import OJProblem, OJProblemForContest, OJSubmission, Problemset, ProblemsetEligibility, Team, TeamForProblemset, ProblemTag
 from root.modules.accounts.models import UserAccount
 from django.db.models import Q
 from datetime import datetime
 import re
+import math
 import unidecode
 from datetime import datetime
 from .BaseDbAccessor import BaseDbAccessor
@@ -19,10 +20,26 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
     def get_all_oj_problems(self, request):
         oj_problems = OJProblem.objects.all()
 
+        difficulty_from = int(request.get('difficulty_from', 0))
+        difficulty_to = int(request.get('difficulty_to', 3500))
+        oj_names = request.getlist('oj_names[]', [])
+
+        oj_problems = oj_problems.filter(
+            difficulty__gte=difficulty_from, difficulty__lte=difficulty_to
+        )
+
+        print(oj_names)
+
+        if len(oj_names) > 0:
+            oj_problems = oj_problems.filter(
+                oj_name__in=oj_names
+            )
+
         return {
             'result': super().do_query(oj_problems, request),
             'meta': {
-                'total_items': oj_problems.count()
+                'total_items': oj_problems.count(),
+                'total_page': math.ceil(oj_problems.count() / self.limit)
             }
         }
 
@@ -147,12 +164,26 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
             oj_problem_code=oj_problem_code
         )
 
+        raw_tags = oj_problem_dict.get('tags', [])
+        tags = []
+        for raw_tag in raw_tags:
+            if raw_tag[0] == '*':
+                continue
+            tag = ProblemTag.objects.filter(name=raw_tag)
+            if tag.exists():
+                tag = tag.first()
+            else:
+                tag = ProblemTag.objects.create(name=raw_tag)
+            tags.append(tag.id)
+
         if oj_problem.exists():
             oj_problem = oj_problem.first()
             oj_problem.title = oj_problem_dict.get('title')
             oj_problem.body = oj_problem_dict.get('body')
             oj_problem.time_limit = oj_problem_dict.get('time_limit')
             oj_problem.memory_limit = oj_problem_dict.get('memory_limit')
+            oj_problem.difficulty = oj_problem_dict.get('difficulty')
+            oj_problem.tags.set(tags)
             oj_problem.save()
             return oj_problem
 
@@ -164,8 +195,9 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
             body=oj_problem_dict.get('body'),
             time_limit=oj_problem_dict.get('time_limit'),
             memory_limit=oj_problem_dict.get('memory_limit'),
+            difficulty=oj_problem_dict.get('difficulty', 0),
         )
-
+        oj_problem.tags.set(tags)
         oj_problem.save()
 
         return oj_problem

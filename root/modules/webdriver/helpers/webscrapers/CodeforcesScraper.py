@@ -63,20 +63,6 @@ class CodeforcesScraper:
             'problem-statement').get_attribute('innerHTML')
 
         try:
-            input_format = self.driver.find_element_by_class_name(
-                'input-specification').get_attribute('innerText').lstrip('Input')
-        except:
-            input_format = ''
-
-        try:
-            output_format = self.driver.find_element_by_class_name(
-                'output-specification').get_attribute('innerText').lstrip('Output')
-        except:
-            output_format = ''
-
-        example = str(self.driver.find_element_by_class_name('sample-test'))
-
-        try:
             notes = self.driver.find_element_by_class_name('note')
             if notes is not None:
                 notes = notes.get_attribute('innerText')
@@ -86,8 +72,7 @@ class CodeforcesScraper:
         try:
             difficulty = self.driver.find_element_by_xpath(
                 '//span[@title="Difficulty"]').get_attribute('innerText').lstrip('*')
-            raw_difficulty = float(difficulty)
-            difficulty = self.__normalize_difficulty(float(difficulty))
+            difficulty = float(difficulty)
         except Exception as e:
             difficulty = 0
 
@@ -96,9 +81,6 @@ class CodeforcesScraper:
         for raw_tag in raw_tags:
             tags.append(raw_tag.get_attribute('innerText'))
 
-        # for div in body.find_all("div", {'class': 'header'}):
-        #     div.decompose()
-        # body = str(body)
         self.driver.quit()
 
         return {
@@ -109,19 +91,6 @@ class CodeforcesScraper:
             'body': body,
             'time_limit': time_limit,
             'memory_limit': memory_limit,
-            'input_format': input_format,
-            'output_format': output_format,
-            'example': example,
-            'notes': notes,
             'difficulty': difficulty,
-            'raw_difficulty': raw_difficulty,
             'tags': tags,
         }
-
-    # * PRIVATE METHODS
-    def __normalize_difficulty(self, difficulty):
-        CODEFORCES_MIN_DIFFICULTY = 650
-        CODEFORCES_MAX_DIFFICULTY = 3000
-        constant_scale = (CODEFORCES_MAX_DIFFICULTY -
-                          CODEFORCES_MIN_DIFFICULTY) / 9
-        return (difficulty - CODEFORCES_MIN_DIFFICULTY) / constant_scale + 1.5

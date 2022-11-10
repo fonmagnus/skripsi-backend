@@ -97,7 +97,7 @@ def get_oj_problems(request):
     return JsonResponse(
         data={
             'problems': serializer.data,
-            'meta': metadata
+            'metadata': metadata
         },
         safe=False,
         status=200
