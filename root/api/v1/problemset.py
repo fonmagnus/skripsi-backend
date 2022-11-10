@@ -186,7 +186,7 @@ def submit_oj_problem(request):
     oj_problem_code = request.data.get('oj_problem_code')
     source_code = request.data.get('source_code')
     slug = request.data.get('slug')
-
+    problemset = None
     if slug is not None:
         problemset = problemset_service.get_problemset_by_slug(slug)
 

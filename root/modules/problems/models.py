@@ -88,6 +88,8 @@ class OJSubmission(models.Model):
     problemset = models.ForeignKey(
         Problemset, on_delete=models.CASCADE, blank=True, null=True, default=None)
     enable_partial_scoring = models.BooleanField(default=False)
+    score = models.FloatField(default=0)
+    subtask_results = models.TextField(null=True, blank=True)
 
 
 class OJProblemForContest(models.Model):

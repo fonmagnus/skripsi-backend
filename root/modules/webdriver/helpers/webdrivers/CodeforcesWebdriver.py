@@ -150,7 +150,7 @@ class CodeforcesWebdriver:
             contest_id, problem_no = oj_problem_code[:-2], oj_problem_code[-2:]
         submission_url = self.base_url + 'contest/' + \
             contest_id + '/submission/' + submission_id
-        print(submission_url)
+        # print(submission_url)
         self.driver.get(submission_url)
         try:
             is_pending_verdict = self.driver.find_element_by_class_name(

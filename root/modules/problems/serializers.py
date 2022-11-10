@@ -25,7 +25,14 @@ class ProblemsetTitleAndSlugOnlySerializer(serializers.ModelSerializer):
         fields = ['title', 'slug']
 
 
+class ProblemTagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProblemTag
+        fields = ['name']
+
+
 class OJProblemSerializer(serializers.ModelSerializer):
+    tags = ProblemTagSerializer(read_only=True, many=True)
 
     class Meta:
         model = OJProblem
@@ -38,14 +45,14 @@ class OJSubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = OJSubmission
         fields = ['verdict', 'status', 'submitted_at',
-                  'id', 'oj_name', 'oj_problem_code', 'user', 'submission_id']
+                  'id', 'oj_name', 'oj_problem_code', 'user', 'submission_id', 'score']
 
 
 class OJSubmissionDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = OJSubmission
         fields = ['verdict', 'submitted_at',
-                  'source_code']
+                  'source_code', 'score', 'subtask_results']
 
 
 class OJProblemForContestSerializer(serializers.ModelSerializer):
@@ -55,12 +62,6 @@ class OJProblemForContestSerializer(serializers.ModelSerializer):
     class Meta:
         model = OJProblemForContest
         fields = '__all__'
-
-
-class ProblemTagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProblemTag
-        fields = ['name']
 
 
 class BodylessOJProblemSerializer(serializers.ModelSerializer):
