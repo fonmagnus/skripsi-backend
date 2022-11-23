@@ -22,6 +22,10 @@ class CodeforcesScraper:
         self.opt = Options()
         if os.environ.get('ENV') == 'production':
             self.opt.add_argument('--headless')
+            self.opt.add_argument('--disable-dev-shm-usage')
+            self.opt.add_argument('--disable-gpu')
+            self.opt.add_argument('--no-sandbox')
+            self.opt.add_argument('--remote-debugging-port=9222')
         # self.opt.add_argument('--headless')
         self.driver = webdriver.Chrome(
             ChromeDriverManager().install(), chrome_options=self.opt)
