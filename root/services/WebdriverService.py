@@ -3,6 +3,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from root.repositories.WebdriverDbAccessor import WebdriverDbAccessor
 from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.utils import ChromeType
 
 from root.modules.webdriver.helpers.webdrivers.AtcoderWebdriver import AtcoderWebdriver
 from root.modules.webdriver.helpers.webdrivers.CodeforcesWebdriver import CodeforcesWebdriver
@@ -36,7 +37,7 @@ class WebdriverService:
 
         # self.opt.add_argument('--headless')
         self.driver = webdriver.Chrome(
-            ChromeDriverManager().install(), chrome_options=self.opt)
+            ChromeDriverManager(chrome_type=ChromeType.GOOGLE).install(), chrome_options=self.opt)
 
         if os.environ.get('ENV') == 'production':
             self.driver.set_window_size(950, 800)
