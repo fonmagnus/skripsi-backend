@@ -2,6 +2,9 @@ from django.db.models import Q
 from root.modules.problems.models import OJProblem, OJProblemForContest, OJSubmission, Problemset, ProblemsetEligibility, Team, TeamForProblemset, ProblemTag
 from root.modules.accounts.models import UserAccount
 from django.db.models import Q
+import operator
+from functools import reduce
+
 from datetime import datetime
 import re
 import math
@@ -38,15 +41,19 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
     def get_all_oj_submissions(self, request):
         oj_submissions = OJSubmission.objects.all()
 
-        if request.get('oj_name') is not None:
+        if len(request.getlist('oj_names[]', [])) > 0:
             oj_submissions = oj_submissions.filter(
-                oj_name=request.get('oj_name'))
+                oj_name__in=request.getlist('oj_names[]'))
 
-        if request.get('oj_problem_code') is not None:
+        if request.get('oj_problem_code'):
             oj_submissions = oj_submissions.filter(
-                oj_problem_code=request.get('oj_problem_code'))
+                oj_problem_code__icontains=request.get('oj_problem_code'))
 
-        return super().do_query(oj_submissions, request)
+        if len(request.getlist('verdicts[]', [])) > 0:
+            oj_submissions = oj_submissions.filter(
+                reduce(operator.or_, (Q(verdict__icontains=x) for x in request.getlist('verdicts[]', []))))
+
+        return self.do_query(oj_submissions, request)
 
     def get_my_published_problemset(self, me):
         return Problemset.objects.filter(

@@ -55,7 +55,6 @@ class CodeforcesWebdriver:
         return crawl_request
 
     def do_crawl(self, url, crawl_request, oj_name, source_code, user_id, oj_problem_code, login_account, oj_submission):
-        print('URL :', url)
         self.driver.get(url)
         try:
             self.do_login(login_account)
@@ -71,40 +70,44 @@ class CodeforcesWebdriver:
             thread.setDaemon(True)
             thread.start()
         except Exception as e:
+            oj_submission.verdict = 'Error'
+            oj_submission.save()
             print(e)
             self.driver.quit()
 
     def keep_fetching_verdict(self, oj_submission):
-        while True:
-            time.sleep(2)
-            self.driver.refresh()
-            verdict = self.get_submission_verdict(
-                oj_submission.submission_id, oj_submission.oj_problem_code, self.driver)
+        try:
+            while True:
+                time.sleep(2)
+                self.driver.refresh()
+                verdict = self.get_submission_verdict(
+                    oj_submission.submission_id, oj_submission.oj_problem_code, self.driver)
 
-            oj_submission.verdict = verdict.get('verdict')
-            oj_submission.status = verdict.get('status')
-            oj_submission.score = verdict.get('score', 0)
+                oj_submission.verdict = verdict.get('verdict')
+                oj_submission.status = verdict.get('status')
+                oj_submission.score = verdict.get('score', 0)
+                oj_submission.save()
+
+                if verdict.get('status') != 'Pending':
+                    break
+        except Exception as e:
+            oj_submission.verdict = 'Error'
             oj_submission.save()
-
-            if verdict.get('status') != 'Pending':
-                break
+            print(e)
 
         self.driver.quit()
 
     def do_login(self, login_account):
-        try:
-            login_link = self.driver.find_element_by_link_text('Enter').click()
-            self.driver.find_element_by_id(
-                'handleOrEmail').send_keys(login_account.email_or_username)
-            self.driver.find_element_by_id(
-                'password').send_keys(login_account.password)
-            self.driver.find_element_by_class_name(
-                'submit').click()
+        login_link = self.driver.find_element_by_link_text('Enter').click()
+        self.driver.find_element_by_id(
+            'handleOrEmail').send_keys(login_account.email_or_username)
+        self.driver.find_element_by_id(
+            'password').send_keys(login_account.password)
+        self.driver.find_element_by_class_name(
+            'submit').click()
 
-            login_account.last_login = datetime.now()
-            login_account.save()
-        except:
-            return
+        login_account.last_login = datetime.now()
+        login_account.save()
 
     def do_submit(self):
         time.sleep(4)

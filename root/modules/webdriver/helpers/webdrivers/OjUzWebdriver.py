@@ -13,7 +13,6 @@ from datetime import datetime
 import os
 import requests
 import platform
-import pyperclip
 
 
 class OjUzWebdriver:
@@ -70,44 +69,44 @@ class OjUzWebdriver:
             thread.setDaemon(True)
             thread.start()
         except Exception as e:
+            oj_submission.verdict = 'Error'
+            oj_submission.save()
             print(e)
             self.driver.quit()
 
     def keep_fetching_verdict(self, oj_submission):
-        while True:
-            time.sleep(2)
-            self.driver.refresh()
-            verdict = self.get_submission_verdict(
-                oj_submission.submission_id, oj_submission.oj_problem_code, self.driver)
+        try:
+            while True:
+                time.sleep(2)
+                self.driver.refresh()
+                verdict = self.get_submission_verdict(
+                    oj_submission.submission_id, oj_submission.oj_problem_code, self.driver)
 
-            oj_submission.verdict = verdict.get('verdict')
-            oj_submission.status = verdict.get('status')
-            oj_submission.score = verdict.get('score', 0)
-            oj_submission.subtask_results = verdict.get(
-                'subtask_results', "[]")
+                oj_submission.verdict = verdict.get('verdict')
+                oj_submission.status = verdict.get('status')
+                oj_submission.score = verdict.get('score', 0)
+                oj_submission.subtask_results = verdict.get(
+                    'subtask_results', "[]")
+                oj_submission.save()
+
+                if verdict.get('status') != 'Pending':
+                    break
+        except Exception as e:
+            oj_submission.verdict = 'Error'
             oj_submission.save()
-
-            if verdict.get('status') != 'Pending':
-                break
-        print(oj_submission.status, oj_submission.verdict)
+        # print(oj_submission.status, oj_submission.verdict)
         self.driver.quit()
 
     def do_login(self, login_account):
-        try:
-
-            self.driver.find_element_by_id(
-                'email').send_keys(login_account.email_or_username)
-            self.driver.find_element_by_id(
-                'password').send_keys(login_account.password)
-            login_button = self.driver.find_element_by_xpath(
-                '//input[@value="Sign in"]')
-            self.driver.execute_script('arguments[0].click()', login_button)
-            login_account.last_login = datetime.now()
-            login_account.save()
-
-        except Exception as e:
-            self.driver.quit()
-            return
+        self.driver.find_element_by_id(
+            'email').send_keys(login_account.email_or_username)
+        self.driver.find_element_by_id(
+            'password').send_keys(login_account.password)
+        login_button = self.driver.find_element_by_xpath(
+            '//input[@value="Sign in"]')
+        self.driver.execute_script('arguments[0].click()', login_button)
+        login_account.last_login = datetime.now()
+        login_account.save()
 
     def do_submit(self, oj_problem_code):
         ddelement = Select(
@@ -198,3 +197,4 @@ class OjUzWebdriver:
         except Exception as e:
             self.driver.quit()
             print(e)
+            raise(e)

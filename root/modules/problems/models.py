@@ -31,6 +31,7 @@ class Problemset(models.Model):
         default='arnold.ardianto.aa@gmail.com'
     )
     enable_team_contest = models.BooleanField(default=False)
+    enable_partial_scoring = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.id) + ' ' + self.title
@@ -77,6 +78,7 @@ class OJSubmission(models.Model):
         Accepted = 'Accepted'
         Rejected = 'Rejected'
         Pending = 'Pending'
+        Error = 'Error'
 
     user = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
     submission_id = models.CharField(

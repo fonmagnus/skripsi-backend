@@ -11,9 +11,13 @@ class BaseDbAccessor:
         offset = int(request.get('offset', self.offset))
         order_by = request.get('order_by', '-id')
 
-        if offset+limit > queryset.count():
-            limit = queryset.count() - offset
+        # limit 0 : takes all objects
+        if limit == 0:
+            limit = queryset.count()
 
+        total_page = 0
+        if limit > 0:
+            total_page = math.ceil(queryset.count() / limit)
         queryset = queryset.order_by(order_by)
         return {
             'result': queryset[offset:offset+limit],

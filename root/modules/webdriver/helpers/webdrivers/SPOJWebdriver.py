@@ -66,44 +66,45 @@ class SPOJWebdriver:
             thread.setDaemon(True)
             thread.start()
         except:
+            oj_submission.verdict = 'Error'
+            oj_submission.save()
             self.driver.quit()
             pass
 
     def keep_fetching_verdict(self, oj_submission):
-        while True:
-            time.sleep(2)
-            self.driver.refresh()
-            verdict = self.get_submission_verdict(
-                oj_submission.submission_id, oj_submission.oj_problem_code, self.driver)
+        try:
 
-            oj_submission.verdict = verdict.get('verdict')
-            oj_submission.status = verdict.get('status')
-            oj_submission.score = verdict.get('score', 0)
+            while True:
+                time.sleep(2)
+                self.driver.refresh()
+                verdict = self.get_submission_verdict(
+                    oj_submission.submission_id, oj_submission.oj_problem_code, self.driver)
+
+                oj_submission.verdict = verdict.get('verdict')
+                oj_submission.status = verdict.get('status')
+                oj_submission.score = verdict.get('score', 0)
+                oj_submission.save()
+
+                if verdict.get('status') != 'Pending':
+                    break
+        except Exception as e:
+            oj_submission.verdict = 'Error'
             oj_submission.save()
-
-            if verdict.get('status') != 'Pending':
-                break
 
         self.driver.quit()
 
     def do_login(self, login_account):
-        try:
-
-            print('Login with : ', login_account)
-            login_link = self.driver.find_element_by_link_text('sign in')
-            login_link.click()
-            self.driver.find_element_by_name(
-                'login_user').send_keys(login_account.email_or_username)
-            self.driver.find_element_by_name(
-                'password').send_keys(login_account.password)
-            self.driver.find_element_by_xpath(
-                '//button[normalize-space()="sign in"]').click()
-            print('Login at :', datetime.now())
-            login_account.last_login = datetime.now()
-            login_account.save()
-
-        except:
-            return
+        login_link = self.driver.find_element_by_link_text('sign in')
+        login_link.click()
+        self.driver.find_element_by_name(
+            'login_user').send_keys(login_account.email_or_username)
+        self.driver.find_element_by_name(
+            'password').send_keys(login_account.password)
+        self.driver.find_element_by_xpath(
+            '//button[normalize-space()="sign in"]').click()
+        print('Login at :', datetime.now())
+        login_account.last_login = datetime.now()
+        login_account.save()
 
     def do_submit(self):
         time.sleep(4)
@@ -169,5 +170,6 @@ class SPOJWebdriver:
                     'verdict': status_text,
                     'status': 'Rejected'
                 }
-        except:
+        except Exception as e:
+            raise(e)
             return

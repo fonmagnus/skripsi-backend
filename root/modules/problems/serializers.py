@@ -43,16 +43,23 @@ class OJSubmissionSerializer(serializers.ModelSerializer):
     user = UserOnlyNameAndUsernameSerializer(many=False, read_only=True)
     oj_problem_title = serializers.SerializerMethodField(
         'get_oj_problem_title')
+    oj_problem_url = serializers.SerializerMethodField(
+        'get_oj_problem_url')
 
     def get_oj_problem_title(self, oj_submission):
         oj_problem = OJProblem.objects.get(
             oj_name=oj_submission.oj_name, oj_problem_code=oj_submission.oj_problem_code)
         return oj_problem.title
 
+    def get_oj_problem_url(self, oj_submission):
+        oj_problem = OJProblem.objects.get(
+            oj_name=oj_submission.oj_name, oj_problem_code=oj_submission.oj_problem_code)
+        return oj_problem.url
+
     class Meta:
         model = OJSubmission
         fields = ['verdict', 'status', 'submitted_at',
-                  'id', 'oj_name', 'oj_problem_code', 'user', 'submission_id', 'score', 'oj_problem_title']
+                  'id', 'oj_name', 'oj_problem_code', 'user', 'submission_id', 'score', 'oj_problem_title', 'oj_problem_url']
 
 
 class OJSubmissionDetailSerializer(serializers.ModelSerializer):
