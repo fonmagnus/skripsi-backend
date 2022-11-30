@@ -10,4 +10,6 @@ urlpatterns = [
     path('activate/<str:uidb64>/<str:token>', accounts.activate),
     path('get-user-by-username/<str:username>',
          accounts.get_user_by_username),
+    path('get-user-statistics/<str:username>',
+         accounts.get_user_statistics),
 ]

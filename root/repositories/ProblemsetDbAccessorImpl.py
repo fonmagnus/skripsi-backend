@@ -352,6 +352,9 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
         result = OJSubmission.objects.filter(user=user).order_by('-id')
         return self.do_pagination(result, params)
 
+    def get_all_oj_submissions_from_user(self, user):
+        return OJSubmission.objects.filter(user=user)
+
     # ***
     # * private methods below
     # ***

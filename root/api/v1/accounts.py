@@ -10,7 +10,7 @@ from root.modules.accounts.models import UserAccount
 from root.modules.accounts.serializers import UserSerializer
 import root.modules.accounts.utils as utils
 
-from root.services import account_service
+from root.services import account_service, problemset_service
 
 
 @api_view(["GET"])
@@ -90,6 +90,18 @@ def get_user_by_username(request, username):
     serializer = UserSerializer(user, many=False)
     return JsonResponse(
         data=serializer.data,
+        safe=False,
+        status=200,
+    )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_user_statistics(request, username):
+    user = utils.get_user_by_request(request)
+    statistics = problemset_service.get_user_statistics(user)
+    return JsonResponse(
+        data=statistics,
         safe=False,
         status=200,
     )

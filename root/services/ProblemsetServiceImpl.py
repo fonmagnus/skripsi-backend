@@ -11,6 +11,7 @@ import json
 import threading
 from datetime import datetime
 import time
+import collections
 
 
 class ProblemsetServiceImpl:
@@ -89,10 +90,10 @@ class ProblemsetServiceImpl:
 
     def get_oj_problem(self, oj_name, oj_problem_code):
         oj_problem_code = oj_problem_code.strip()
-        problem = self.db_accessor.get_oj_problem(oj_name, oj_problem_code)
-        if problem == None:
-            problem = self.webscraper_service.scrap(oj_name, oj_problem_code)
-            problem = self.db_accessor.save_oj_problem(problem)
+        # problem = self.db_accessor.get_oj_problem(oj_name, oj_problem_code)
+        # if problem == None:
+        problem = self.webscraper_service.scrap(oj_name, oj_problem_code)
+        problem = self.db_accessor.save_oj_problem(problem)
         return problem
 
     def submit_oj_problem(self, oj_name, oj_problem_code, source_code, user, problemset=None):
@@ -164,6 +165,58 @@ class ProblemsetServiceImpl:
                 'data': serializer.data,
                 'metadata': response.get('metadata')
             }
+
+    def get_all_oj_submissions_from_user(self, user):
+        return self.db_accessor.get_all_oj_submissions_from_user(user)
+
+    def get_user_statistics(self, user):
+        submissions = self.get_all_oj_submissions_from_user(user)
+
+        difficulty_statistics = {}
+        tag_statistics = {}
+        solved_problems = set()
+
+        for submission in submissions:
+            if submission.status != 'Accepted':
+                continue
+            solved_problems.add(submission.id)
+            oj_problem = self.get_oj_problem(
+                submission.oj_name, submission.oj_problem_code)
+            difficulty = oj_problem.difficulty
+
+            if difficulty is None:
+                continue
+            if not difficulty in difficulty_statistics:
+                difficulty_statistics[difficulty] = 0
+            difficulty_statistics[difficulty] += 1
+
+            tags = oj_problem.tags.all()
+            for tag in tags:
+                if not tag in tag_statistics:
+                    tag_statistics[tag.name] = 0
+                tag_statistics[tag.name] += 1
+
+        # * sort tags by frequencies
+        tag_statistics = dict(
+            sorted(tag_statistics.items(), key=lambda item: item[1], reverse=True))
+        difficulty_statistics = collections.OrderedDict(
+            sorted(difficulty_statistics.items()))
+
+        difficulty_statistics = self.__reformat(difficulty_statistics)
+        tag_statistics = self.__reformat(tag_statistics)
+        return {
+            'difficulty_statistics': difficulty_statistics,
+            'tag_statistics': tag_statistics
+        }
+
+    def __reformat(self, statistics):
+        result = []
+        for key, value in statistics.items():
+            result.append({
+                'key': key,
+                'value': value
+            })
+        return result
 
     # * private
 

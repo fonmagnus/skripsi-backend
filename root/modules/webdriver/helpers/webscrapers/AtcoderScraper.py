@@ -61,8 +61,7 @@ class AtcoderScraper:
             'output_format': output_format,
             'example': example,
             'notes': notes,
-            'difficulty': difficulty,
-            'raw_difficulty': raw_difficulty,
+            'difficulty': raw_difficulty,
         }
 
     # * PRIVATE METHODS
