@@ -36,6 +36,8 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
                 oj_name__in=oj_names
             )
 
+        oj_problems = oj_problems.order_by('-id')
+
         return super().do_pagination(oj_problems, request)
 
     def get_all_oj_submissions(self, request):
@@ -53,6 +55,7 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
             oj_submissions = oj_submissions.filter(
                 reduce(operator.or_, (Q(verdict__icontains=x) for x in request.getlist('verdicts[]', []))))
 
+        oj_submissions = oj_submissions.order_by('-id')
         return self.do_pagination(oj_submissions, request)
 
     def get_my_published_problemset(self, me):
