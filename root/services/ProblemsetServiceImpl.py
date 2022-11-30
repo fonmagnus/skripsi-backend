@@ -90,10 +90,10 @@ class ProblemsetServiceImpl:
 
     def get_oj_problem(self, oj_name, oj_problem_code):
         oj_problem_code = oj_problem_code.strip()
-        # problem = self.db_accessor.get_oj_problem(oj_name, oj_problem_code)
-        # if problem == None:
-        problem = self.webscraper_service.scrap(oj_name, oj_problem_code)
-        problem = self.db_accessor.save_oj_problem(problem)
+        problem = self.db_accessor.get_oj_problem(oj_name, oj_problem_code)
+        if problem == None:
+            problem = self.webscraper_service.scrap(oj_name, oj_problem_code)
+            problem = self.db_accessor.save_oj_problem(problem)
         return problem
 
     def submit_oj_problem(self, oj_name, oj_problem_code, source_code, user, problemset=None):
