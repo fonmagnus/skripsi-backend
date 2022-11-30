@@ -14,3 +14,9 @@ class AccountDbAccessor:
         user = UserAccount.objects.get(id=user_id)
         user.profile_photo = response.get('public_id')
         user.save()
+
+    def get_user_by_username(self, username):
+        try:
+            return UserAccount.objects.get(username=username)
+        except UserAccount.DoesNotExist:
+            return None

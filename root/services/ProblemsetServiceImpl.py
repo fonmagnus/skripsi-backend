@@ -1,5 +1,6 @@
 from root.modules.accounts.models import UserAccount
 from root.modules.problems.models import OJProblem, Team
+from root.modules.problems.serializers import OJSubmissionSerializer
 from root.repositories.ProblemsetDbAccessorImpl import ProblemsetDbAccessorImpl
 from datetime import datetime
 from django.utils import timezone, dateformat
@@ -30,17 +31,11 @@ class ProblemsetServiceImpl:
 
     def get_all_oj_problems(self, request):
         result = self.db_accessor.get_all_oj_problems(request)
-        return (
-            result.get('result'),
-            result.get('meta')
-        )
+        return result
 
     def get_all_oj_submissions(self, request):
         result = self.db_accessor.get_all_oj_submissions(request)
-        return (
-            result.get('result'),
-            result.get('meta')
-        )
+        return result
 
     def toggle(self, slug):
         return self.db_accessor.toggle(slug)
@@ -100,13 +95,20 @@ class ProblemsetServiceImpl:
             problem = self.db_accessor.save_oj_problem(problem)
         return problem
 
-    def submit_oj_problem(self, oj_name, oj_problem_code, source_code, user_id, problemset=None):
+    def submit_oj_problem(self, oj_name, oj_problem_code, source_code, user, problemset=None):
         crawl_request = self.webdriver_service.submit_solution(
-            oj_name, oj_problem_code, source_code, user_id, problemset)
+            {
+                'oj_name': oj_name,
+                'oj_problem_code': oj_problem_code,
+                'source_code': source_code,
+                'user': user,
+                'problemset': problemset
+            }
+        )
         return crawl_request
 
-    def get_oj_submission_verdict(self, oj_name, submission_id, oj_problem_code):
-        return self.db_accessor.get_oj_submission_verdict(oj_name, oj_problem_code, submission_id)
+    def get_oj_submission_verdict(self, id):
+        return self.db_accessor.get_oj_submission_verdict(id)
 
     def get_oj_submissions_history(self, oj_name, oj_problem_code, user_ids, problemset=None):
         submissions = self.db_accessor.get_oj_submissions_history(
@@ -148,6 +150,20 @@ class ProblemsetServiceImpl:
 
     def get_team_members_from_team_id(self, team_id):
         return self.db_accessor.get_team_members_from_team_id(team_id)
+
+    def get_user_oj_submissions_history(self, user, params={}):
+        return self.db_accessor.get_user_oj_submission_history(user, params)
+
+    def get_students_work(self, student, params):
+        if params.get('oj_name') == 'Portal':
+            response = self.get_user_oj_submissions_history(
+                student, params)
+            serializer = OJSubmissionSerializer(
+                response.get('data'), many=True)
+            return {
+                'data': serializer.data,
+                'metadata': response.get('metadata')
+            }
 
     # * private
 

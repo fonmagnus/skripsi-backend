@@ -4,15 +4,16 @@ from selenium.webdriver.support.ui import Select
 import time
 from root.modules.webdriver.models import OJLoginAccountInfo, CrawlRequest
 from root.modules.problems.models import OJSubmission
+from .BaseWebdriver import BaseWebdriver
 import threading
 from datetime import datetime
 import os
 
 
-class SPOJWebdriver:
+class SPOJWebdriver(BaseWebdriver):
     def __init__(self, *args, **kwargs):
         self.base_url = 'https://www.spoj.com/'
-        self.driver = kwargs.get('driver')
+        BaseWebdriver.__init__(self, *args, **kwargs)
 
     def __del__(self):
         try:
@@ -20,45 +21,29 @@ class SPOJWebdriver:
         except:
             pass
 
-    def submit_solution(self, oj_name, oj_problem_code, source_code, user_id, driver, problemset=None):
-        self.driver = driver
-        self.url = self.base_url + 'problems/' + oj_problem_code
+    def submit_solution(self, params={}):
+        self.pre_submit_solution(params)
+        self.url = self.base_url + 'problems/' + self.oj_problem_code
         self.lang = "C++14 (gcc 8.3)"
-        self.source_code = source_code
 
-        login_account = OJLoginAccountInfo.objects.filter(
-            oj_name='SPOJ').order_by('?').first()
-
-        crawl_request = CrawlRequest.objects.create(
-            oj_name=oj_name, oj_login_account_info=login_account)
-
-        oj_submission = OJSubmission.objects.create(
-            oj_name=oj_name,
-            source_code=source_code,
-            user_id=user_id,
-            submission_id=None,
-            verdict='Pending',
-            oj_problem_code=oj_problem_code,
-            oj_login_account_info=login_account,
-            problemset=problemset
+        thread = threading.Thread(
+            target=self.do_crawl,
+            args=[self.oj_submission]
         )
-
-        thread = threading.Thread(target=self.do_crawl, args=[
-                                  self.url, crawl_request, oj_name, source_code, user_id, oj_problem_code, login_account, oj_submission])
         thread.setDaemon(True)
         thread.start()
-        return crawl_request
+        return self.crawl_request
 
-    def do_crawl(self, url, crawl_request, oj_name, source_code, user_id, oj_problem_code, login_account, oj_submission):
+    def do_crawl(self, oj_submission):
         try:
-            self.driver.get(url)
-            self.do_login(login_account)
-            self.driver.get(url)
+            self.driver.get(self.url)
+            self.do_login()
+            self.driver.get(self.url)
             self.do_submit()
-            submission_id = self.fetch_submission_id(login_account)
-            crawl_request.submission_id = submission_id
-            crawl_request.status = 'Completed'
-            crawl_request.save()
+            submission_id = self.fetch_submission_id()
+            self.crawl_request.submission_id = submission_id
+            self.crawl_request.status = 'Completed'
+            self.crawl_request.save()
             oj_submission.submission_id = submission_id
             oj_submission.save()
             thread = threading.Thread(
@@ -66,19 +51,15 @@ class SPOJWebdriver:
             thread.setDaemon(True)
             thread.start()
         except:
-            oj_submission.verdict = 'Error'
-            oj_submission.save()
-            self.driver.quit()
-            pass
+            self.mark_submission_error(oj_submission)
 
     def keep_fetching_verdict(self, oj_submission):
         try:
-
             while True:
                 time.sleep(2)
                 self.driver.refresh()
                 verdict = self.get_submission_verdict(
-                    oj_submission.submission_id, oj_submission.oj_problem_code, self.driver)
+                    oj_submission.submission_id, oj_submission.oj_problem_code)
 
                 oj_submission.verdict = verdict.get('verdict')
                 oj_submission.status = verdict.get('status')
@@ -87,24 +68,23 @@ class SPOJWebdriver:
 
                 if verdict.get('status') != 'Pending':
                     break
-        except Exception as e:
-            oj_submission.verdict = 'Error'
-            oj_submission.save()
+        except:
+            self.mark_submission_error(oj_submission)
 
         self.driver.quit()
 
-    def do_login(self, login_account):
+    def do_login(self):
         login_link = self.driver.find_element_by_link_text('sign in')
         login_link.click()
         self.driver.find_element_by_name(
-            'login_user').send_keys(login_account.email_or_username)
+            'login_user').send_keys(self.login_account.email_or_username)
         self.driver.find_element_by_name(
-            'password').send_keys(login_account.password)
+            'password').send_keys(self.login_account.password)
         self.driver.find_element_by_xpath(
             '//button[normalize-space()="sign in"]').click()
         print('Login at :', datetime.now())
-        login_account.last_login = datetime.now()
-        login_account.save()
+        self.login_account.last_login = datetime.now()
+        self.login_account.save()
 
     def do_submit(self):
         time.sleep(4)
@@ -132,17 +112,15 @@ class SPOJWebdriver:
         os.remove(filename)
         print('Done upload!')
 
-    def fetch_submission_id(self, login_account):
-        print('Login account:', login_account)
-        url = self.base_url + 'status/' + login_account.email_or_username
+    def fetch_submission_id(self):
+        url = self.base_url + 'status/' + self.login_account.email_or_username
         self.driver.get(url)
         td = self.driver.find_element_by_class_name(
             'sourcelink').get_attribute('innerText')
         return td
 
-    def get_submission_verdict(self, submission_id, oj_problem_code, driver):
+    def get_submission_verdict(self, submission_id, oj_problem_code):
         try:
-            self.driver = driver
             crawl_request = CrawlRequest.objects.get(
                 oj_name='SPOJ', submission_id=submission_id)
             crawler_account = crawl_request.oj_login_account_info
@@ -170,6 +148,8 @@ class SPOJWebdriver:
                     'verdict': status_text,
                     'status': 'Rejected'
                 }
-        except Exception as e:
-            raise(e)
-            return
+        except:
+            return {
+                'verdict': 'Error',
+                'status': 'Error'
+            }

@@ -1,6 +1,7 @@
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
+from root.modules.accounts.models import UserAccount
 import jwt
 
 
@@ -14,6 +15,12 @@ def get_user_id_by_request(request):
         jwt_decode_cache[access_token] = jwt.decode(
             access_token, verify=False).get("user_id")
     return jwt_decode_cache[access_token]
+
+
+def get_user_by_request(request):
+    user_id = get_user_id_by_request(request)
+    user = UserAccount.objects.get(id=user_id)
+    return user
 
 
 User = get_user_model()

@@ -36,7 +36,7 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
                 oj_name__in=oj_names
             )
 
-        return super().do_query(oj_problems, request)
+        return super().do_pagination(oj_problems, request)
 
     def get_all_oj_submissions(self, request):
         oj_submissions = OJSubmission.objects.all()
@@ -53,7 +53,7 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
             oj_submissions = oj_submissions.filter(
                 reduce(operator.or_, (Q(verdict__icontains=x) for x in request.getlist('verdicts[]', []))))
 
-        return self.do_query(oj_submissions, request)
+        return self.do_pagination(oj_submissions, request)
 
     def get_my_published_problemset(self, me):
         return Problemset.objects.filter(
@@ -241,11 +241,11 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
             result = result.filter(problemset=problemset)
         return result
 
-    def get_oj_submission_verdict(self, oj_name, oj_problem_code, submission_id):
+    def get_oj_submission_verdict(self, id):
         try:
-            return OJSubmission.objects.get(oj_name=oj_name, oj_problem_code=oj_problem_code, submission_id=submission_id)
+            return OJSubmission.objects.get(id=id)
         except OJSubmission.DoesNotExist:
-            return OJSubmission.objects.get(id=submission_id)
+            return None
 
     def get_oj_submission_detail(self, id):
         return OJSubmission.objects.get(id=id)
@@ -344,6 +344,10 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
 
     def get_team_members_from_team_id(self, team_id):
         return Team.objects.get(id=team_id).members.all()
+
+    def get_user_oj_submission_history(self, user, params={}):
+        result = OJSubmission.objects.filter(user=user).order_by('-id')
+        return self.do_pagination(result, params)
 
     # ***
     # * private methods below

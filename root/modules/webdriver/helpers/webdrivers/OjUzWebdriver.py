@@ -8,60 +8,46 @@ from selenium.webdriver.common.keys import Keys
 import time
 from root.modules.webdriver.models import OJLoginAccountInfo, CrawlRequest
 from root.modules.problems.models import OJSubmission
+from .BaseWebdriver import BaseWebdriver
 import threading
 from datetime import datetime
-import os
-import requests
-import platform
 
 
-class OjUzWebdriver:
+class OjUzWebdriver(BaseWebdriver):
     def __init__(self, *args, **kwargs):
         self.base_url = 'https://oj.uz/'
-        self.driver = kwargs.get('driver')
+        BaseWebdriver.__init__(self, *args, **kwargs)
 
     def __del__(self):
         self.driver.quit()
 
-    def submit_solution(self, oj_name, oj_problem_code, source_code, user_id, driver, problemset=None):
-        self.driver = driver
-        login_account = OJLoginAccountInfo.objects.filter(
-            oj_name='OjUz').order_by('?').first()
-
-        crawl_request = CrawlRequest.objects.create(
-            oj_name=oj_name, oj_login_account_info=login_account)
-
-        oj_submission = OJSubmission.objects.create(
-            oj_name=oj_name,
-            source_code=source_code,
-            user_id=user_id,
-            submission_id=None,
-            verdict='Pending',
-            oj_problem_code=oj_problem_code,
-            oj_login_account_info=login_account,
-            problemset=problemset
-        )
-
-        self.url = self.base_url + 'problem/submit/' + oj_problem_code
+    def submit_solution(self, params={}):
+        self.pre_submit_solution(params)
+        self.url = self.base_url + 'problem/submit/' + self.oj_problem_code
         self.lang = "C++17 [g++ (Ubuntu 10.2.0-5ubuntu1~20.04) 10.2.0]"
-        self.source_code = source_code
 
-        thread = threading.Thread(target=self.do_crawl, args=[
-                                  self.url, crawl_request, oj_name, source_code, user_id, oj_problem_code, login_account, oj_submission])
+        thread = threading.Thread(
+            target=self.do_crawl,
+            args=[
+                self.url,
+                self.oj_problem_code,
+                self.oj_submission
+            ]
+        )
         thread.setDaemon(True)
         thread.start()
-        return crawl_request
+        return self.crawl_request
 
-    def do_crawl(self, url, crawl_request, oj_name, source_code, user_id, oj_problem_code, login_account, oj_submission):
+    def do_crawl(self, oj_problem_code, oj_submission):
         try:
             self.driver.get(self.base_url + 'login')
-            self.do_login(login_account)
-            self.driver.get(url)
+            self.do_login()
+            self.driver.get(self.url)
             self.do_submit(oj_problem_code)
             submission_id = self.fetch_submission_id()
-            crawl_request.submission_id = submission_id
-            crawl_request.status = 'Completed'
-            crawl_request.save()
+            self.crawl_request.submission_id = submission_id
+            self.crawl_request.status = 'Completed'
+            self.crawl_request.save()
             oj_submission.submission_id = submission_id
             oj_submission.save()
             thread = threading.Thread(
@@ -69,10 +55,7 @@ class OjUzWebdriver:
             thread.setDaemon(True)
             thread.start()
         except Exception as e:
-            oj_submission.verdict = 'Error'
-            oj_submission.save()
-            print(e)
-            self.driver.quit()
+            self.mark_submission_error(oj_submission)
 
     def keep_fetching_verdict(self, oj_submission):
         try:
@@ -80,7 +63,7 @@ class OjUzWebdriver:
                 time.sleep(2)
                 self.driver.refresh()
                 verdict = self.get_submission_verdict(
-                    oj_submission.submission_id, oj_submission.oj_problem_code, self.driver)
+                    oj_submission.submission_id, oj_submission.oj_problem_code)
 
                 oj_submission.verdict = verdict.get('verdict')
                 oj_submission.status = verdict.get('status')
@@ -91,22 +74,22 @@ class OjUzWebdriver:
 
                 if verdict.get('status') != 'Pending':
                     break
-        except Exception as e:
-            oj_submission.verdict = 'Error'
-            oj_submission.save()
-        # print(oj_submission.status, oj_submission.verdict)
+                print(oj_submission.status, oj_submission.verdict)
+        except:
+            self.mark_submission_error(oj_submission)
+
         self.driver.quit()
 
-    def do_login(self, login_account):
+    def do_login(self):
         self.driver.find_element_by_id(
-            'email').send_keys(login_account.email_or_username)
+            'email').send_keys(self.login_account.email_or_username)
         self.driver.find_element_by_id(
-            'password').send_keys(login_account.password)
+            'password').send_keys(self.login_account.password)
         login_button = self.driver.find_element_by_xpath(
             '//input[@value="Sign in"]')
         self.driver.execute_script('arguments[0].click()', login_button)
-        login_account.last_login = datetime.now()
-        login_account.save()
+        self.login_account.last_login = datetime.now()
+        self.login_account.save()
 
     def do_submit(self, oj_problem_code):
         ddelement = Select(
@@ -129,9 +112,8 @@ class OjUzWebdriver:
     def fetch_submission_id(self):
         return self.driver.current_url.split('/')[-1]
 
-    def get_submission_verdict(self, submission_id, oj_problem_code, driver):
+    def get_submission_verdict(self, submission_id, oj_problem_code):
         try:
-            self.driver = driver
             url = self.base_url + 'submission/' + str(submission_id)
             self.driver.get(url)
             progress_bar = self.driver.find_element_by_id(
@@ -195,6 +177,10 @@ class OjUzWebdriver:
                     'subtask_results': subtask_results,
                 }
         except Exception as e:
-            self.driver.quit()
+            return {
+                'verdict': 'Error',
+                'status': 'Error',
+                'score': 0,
+                'subtask_results': []
+            }
             print(e)
-            raise(e)

@@ -13,6 +13,8 @@ urlpatterns = [
          problemset.get_oj_problem),
     path('get-oj-problems',
          problemset.get_oj_problems),
+    path('get-oj-submission/<str:submission_id>',
+         problemset.get_oj_submission),
     path('get-oj-submissions',
          problemset.get_oj_submissions),
     path('submit-oj-problem', problemset.submit_oj_problem),
@@ -70,4 +72,6 @@ urlpatterns = [
          problemset.delete_oj_problem_for_contest),
     path('register-contest/<slug:slug>',
          problemset.register_contest),
+    path('get-students-work',
+         problemset.get_students_work),
 ]

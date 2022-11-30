@@ -6,10 +6,9 @@ class BaseDbAccessor:
         self.limit = 10
         self.offset = 0
 
-    def do_query(self, queryset, request):
+    def do_pagination(self, queryset, request):
         limit = int(request.get('limit', self.limit))
         offset = int(request.get('offset', self.offset))
-        order_by = request.get('order_by', '-id')
 
         # limit 0 : takes all objects
         if limit == 0:
@@ -18,11 +17,11 @@ class BaseDbAccessor:
         total_page = 0
         if limit > 0:
             total_page = math.ceil(queryset.count() / limit)
-        queryset = queryset.order_by(order_by)
+
         return {
-            'result': queryset[offset:offset+limit],
-            'meta': {
+            'data': queryset[offset:min(offset+limit, queryset.count())],
+            'metadata': {
                 'total_items': queryset.count(),
-                'total_page': math.ceil(queryset.count() / limit)
+                'total_page': total_page
             }
         }

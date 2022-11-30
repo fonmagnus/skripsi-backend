@@ -92,26 +92,28 @@ def get_contest_problems(request, slug):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_oj_problems(request):
-    oj_problems, metadata = problemset_service.get_all_oj_problems(request.GET)
-    serializer = BodylessOJProblemSerializer(oj_problems, many=True)
+    result = problemset_service.get_all_oj_problems(request.GET)
+    serializer = BodylessOJProblemSerializer(result.get('data'), many=True)
     return JsonResponse(
         data={
-            'problems': serializer.data,
-            'metadata': metadata
+            'data': serializer.data,
+            'metadata': result.get('metadata')
         },
         safe=False,
         status=200
     )
 
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_oj_submissions(request):
-    oj_problems, metadata = problemset_service.get_all_oj_submissions(request.GET)
-    serializer = OJSubmissionSerializer(oj_problems, many=True)
+    result = problemset_service.get_all_oj_submissions(
+        request.GET)
+    serializer = OJSubmissionSerializer(result.get('data'), many=True)
     return JsonResponse(
         data={
             'data': serializer.data,
-            'metadata': metadata
+            'metadata': result.get('metadata')
         },
         safe=False,
         status=200
@@ -200,13 +202,20 @@ def submit_oj_problem(request):
     oj_problem_code = request.data.get('oj_problem_code')
     source_code = request.data.get('source_code')
     slug = request.data.get('slug')
+
     problemset = None
     if slug is not None:
         problemset = problemset_service.get_problemset_by_slug(slug)
 
-    user_id = utils.get_user_id_by_request(request)
+    user = utils.get_user_by_request(request)
+
     crawl_request = problemset_service.submit_oj_problem(
-        oj_name, oj_problem_code, source_code, user_id, problemset)
+        oj_name=oj_name,
+        oj_problem_code=oj_problem_code,
+        source_code=source_code,
+        user=user,
+        problemset=problemset
+    )
     serializer = CrawlRequestSerializer(crawl_request, many=False)
     return JsonResponse(
         data=serializer.data,
@@ -221,6 +230,18 @@ def get_submission_id_from_crawl_request(request, crawl_request_id):
     crawl_request = webdriver_service.get_crawl_request_by_id(crawl_request_id)
 
     serializer = CrawlRequestSerializer(crawl_request, many=False)
+    return JsonResponse(
+        data=serializer.data,
+        safe=False,
+        status=200
+    )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsOJSubmissionOwner])
+def get_oj_submission(request, submission_id):
+    oj_submission = problemset_service.get_oj_submission_verdict(submission_id)
+    serializer = OJSubmissionSerializer(oj_submission, many=False)
     return JsonResponse(
         data=serializer.data,
         safe=False,
@@ -533,6 +554,23 @@ def get_team_members_by_id(request, team_id):
     serializer = UserSerializer(members, many=True)
     return JsonResponse(
         data=serializer.data,
+        safe=False,
+        status=200
+    )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_students_work(request):
+    params = request.GET
+    user = account_service.get_user_by_username(params.get('user', ''))
+    students_work = problemset_service.get_students_work(
+        user,
+        request.GET
+    )
+
+    return JsonResponse(
+        data=students_work,
         safe=False,
         status=200
     )

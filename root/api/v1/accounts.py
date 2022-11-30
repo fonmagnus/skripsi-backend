@@ -81,3 +81,15 @@ def upload_profile_photo(request):
         },
         status=200
     )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_user_by_username(request, username):
+    user = account_service.get_user_by_username(username)
+    serializer = UserSerializer(user, many=False)
+    return JsonResponse(
+        data=serializer.data,
+        safe=False,
+        status=200,
+    )
