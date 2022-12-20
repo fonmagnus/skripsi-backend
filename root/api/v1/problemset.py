@@ -13,6 +13,7 @@ from root.modules.problems.serializers import (
     TeamSerializer,
     OJProblemForContestSerializer,
     ProblemsetEligibilitySerializer,
+    DiscussionCommentSerializer
 )
 
 from root.modules.webdriver.serializers import (
@@ -196,7 +197,7 @@ def get_oj_problem(request, oj_name, oj_problem_code):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated, IsEligibleWorkingOnProblemset])
+@permission_classes([IsAuthenticated])
 def submit_oj_problem(request):
     oj_name = request.data.get('oj_name')
     oj_problem_code = request.data.get('oj_problem_code')
@@ -574,3 +575,39 @@ def get_students_work(request):
         safe=False,
         status=200
     )
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_comments_from_oj_problem(request):
+    params = request.GET
+    oj_name = params.get('oj_name')
+    oj_problem_code = params.get('oj_problem_code')
+    comments = problemset_service.get_comments_from_oj_problem(oj_name, oj_problem_code)
+    serializer = DiscussionCommentSerializer(comments, many=True)
+
+    return JsonResponse(
+        data=serializer.data,
+        safe=False,
+        status=200
+    )
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def post_comment_to_oj_problem(request):
+    oj_problem = problemset_service.get_oj_problem(
+        request.data.get('oj_name'), 
+        request.data.get('oj_problem_code')
+    )
+    user = utils.get_user_by_request(request)
+    content = request.data.get('content')
+    problemset_service.post_comment_to_oj_problem(oj_problem, user, content)
+
+    return JsonResponse(
+        data={
+            'message': 'Success Post Comment'
+        },
+        status=200,
+        safe=False
+    )
+
+

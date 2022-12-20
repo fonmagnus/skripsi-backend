@@ -127,3 +127,12 @@ class TeamForProblemset(models.Model):
 
     def __str__(self):
         return self.team.name + ' -- ' + self.problemset.title
+
+
+class DiscussionComment(models.Model):
+    oj_problem = models.ForeignKey(OJProblem, on_delete=models.CASCADE)
+    user = models.ForeignKey(UserAccount, on_delete=models.DO_NOTHING)
+    content = models.TextField(default=None)
+    created_at = models.DateTimeField(auto_now_add=True)
+    upvotes = models.IntegerField(default=0)
+    downvotes = models.IntegerField(default=0)

@@ -152,6 +152,12 @@ class ProblemsetServiceImpl:
     def get_team_members_from_team_id(self, team_id):
         return self.db_accessor.get_team_members_from_team_id(team_id)
 
+    def get_comments_from_oj_problem(self, oj_name, oj_problem_code):
+        return self.db_accessor.get_all_comments_from_oj_problem(oj_name, oj_problem_code)
+    
+    def post_comment_to_oj_problem(self, oj_problem, user, content):
+        return self.db_accessor.post_comment_to_oj_problem(oj_problem, user, content)
+
     def get_user_oj_submissions_history(self, user, params={}):
         return self.db_accessor.get_user_oj_submission_history(user, params)
 

@@ -31,7 +31,7 @@ class UserOnlyNameSerializer(UserSerializer):
 class UserOnlyNameAndUsernameSerializer(UserSerializer):
     class Meta(UserSerializer.Meta):
         model = User
-        fields = ('name', 'username')
+        fields = ('name', 'username', 'profile_photo')
 
 
 class UserOnlyNameAndEmailSerializer(UserSerializer):

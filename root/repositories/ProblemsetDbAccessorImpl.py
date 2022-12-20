@@ -1,5 +1,5 @@
 from django.db.models import Q
-from root.modules.problems.models import OJProblem, OJProblemForContest, OJSubmission, Problemset, ProblemsetEligibility, Team, TeamForProblemset, ProblemTag
+from root.modules.problems.models import OJProblem, OJProblemForContest, OJSubmission, Problemset, ProblemsetEligibility, Team, TeamForProblemset, ProblemTag, DiscussionComment
 from root.modules.accounts.models import UserAccount
 from django.db.models import Q
 import operator
@@ -354,6 +354,16 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
 
     def get_all_oj_submissions_from_user(self, user):
         return OJSubmission.objects.filter(user=user)
+    
+    def get_all_comments_from_oj_problem(self, oj_name, oj_problem_code):
+        return DiscussionComment.objects.filter(oj_problem__oj_name=oj_name, oj_problem__oj_problem_code=oj_problem_code)
+    
+    def post_comment_to_oj_problem(self, oj_problem, user, content):
+        return DiscussionComment.objects.create(
+            oj_problem=oj_problem,
+            user=user,
+            content=content
+        )
 
     # ***
     # * private methods below

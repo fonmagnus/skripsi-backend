@@ -8,7 +8,8 @@ from .models import (
     OJProblemForContest,
     Team,
     TeamForProblemset,
-    ProblemTag
+    ProblemTag,
+    DiscussionComment
 )
 from root.modules.accounts.serializers import UserSerializer, UserOnlyNameAndUsernameSerializer
 
@@ -118,4 +119,11 @@ class TeamForProblemsetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TeamForProblemset
+        fields = '__all__'
+
+class DiscussionCommentSerializer(serializers.ModelSerializer):
+    oj_problem = BodylessOJProblemSerializer(many=False)
+    user = UserOnlyNameAndUsernameSerializer(many=False)
+    class Meta:
+        model = DiscussionComment
         fields = '__all__'
