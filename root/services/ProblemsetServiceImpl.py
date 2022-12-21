@@ -31,6 +31,11 @@ class ProblemsetServiceImpl:
         return self.db_accessor.get_problemset_by_slug(slug)
 
     def get_all_oj_problems(self, request):
+        if request.get('oj_problem_code') and request.getlist('oj_names[]'):
+            oj_names = request.getlist('oj_names[]')
+            for oj_name in oj_names:
+                self.get_oj_problem(oj_name, request.get('oj_problem_code'))
+        
         result = self.db_accessor.get_all_oj_problems(request)
         return result
 

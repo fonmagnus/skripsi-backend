@@ -6,6 +6,7 @@ from selenium.webdriver.support.ui import Select
 from selenium import webdriver
 import os
 import time
+from root.modules.webdriver.models import OJLoginAccountInfo
 
 
 class CodeforcesScraper:

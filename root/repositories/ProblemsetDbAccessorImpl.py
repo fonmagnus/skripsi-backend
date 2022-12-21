@@ -26,9 +26,12 @@ class ProblemsetDbAccessorImpl(BaseDbAccessor):
         difficulty_from = int(request.get('difficulty_from', 0))
         difficulty_to = int(request.get('difficulty_to', 3500))
         oj_names = request.getlist('oj_names[]', [])
+        oj_problem_code = request.get('oj_problem_code', '')
 
         oj_problems = oj_problems.filter(
-            difficulty__gte=difficulty_from, difficulty__lte=difficulty_to
+            difficulty__gte=difficulty_from, 
+            difficulty__lte=difficulty_to, 
+            oj_problem_code__icontains=oj_problem_code
         )
 
         if len(oj_names) > 0:
