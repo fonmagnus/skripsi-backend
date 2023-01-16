@@ -239,7 +239,7 @@ def get_submission_id_from_crawl_request(request, crawl_request_id):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated, IsOJSubmissionOwner])
+@permission_classes([IsAuthenticated])
 def get_oj_submission(request, submission_id):
     oj_submission = problemset_service.get_oj_submission_verdict(submission_id)
     serializer = OJSubmissionSerializer(oj_submission, many=False)
